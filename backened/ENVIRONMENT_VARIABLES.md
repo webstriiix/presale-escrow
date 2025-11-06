@@ -5,7 +5,7 @@ Create a `.env` file in the `backened` directory with these variables:
 ## Required Variables
 
 ```env
-# ========== Sumsub KYC Configuration ==========
+# ========== Sumsub KYC/AML Configuration ==========
 SUMSUB_BASE_URL=https://api.sumsub.com
 SUMSUB_APP_TOKEN=your_sumsub_app_token_here
 SUMSUB_SECRET_KEY=your_sumsub_secret_key_here
@@ -33,6 +33,10 @@ PRESALE_CONTRACT_ADDRESS=0x1234567890123456789012345678901234567890
 - Create an application
 - Get your `APP_TOKEN` and `SECRET_KEY`
 - Set `SUMSUB_LEVEL_NAME` to your verification level (e.g., "basic-kyc")
+
+For AML screening, ensure AML Screening is enabled on your Sumsub account. Our backend exposes:
+- `POST /api/aml/screen` to trigger a screening by `userId` (externalUserId) or `applicantId`
+- `GET /api/aml/status/:id` to fetch screening status (by externalUserId or applicantId)
 
 ### 2. Blockchain Configuration
 - **RPC_URL**: Using Infura Sepolia testnet endpoint with your key

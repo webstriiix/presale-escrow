@@ -35,28 +35,3 @@ services:
         sync: false
       - key: PORT
         sync: false
-
-  # 🔵 FRONTEND SERVICE (Next.js 15)
-  - type: web
-    name: frontend-service
-    env: node
-    rootDir: Presale-front-end
-    buildCommand: npm install && npm run build
-    startCommand: npm start
-    plan: free
-    envVars:
-      - key: NODE_ENV
-        value: production
-      - key: NODE_VERSION
-        value: 20
-      # 🌍 Variables públicas para el frontend
-      - key: NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID
-        sync: false
-      - key: NEXT_PUBLIC_API_URL
-        value: https://backend-service.onrender.com
-      - key: NEXT_PUBLIC_API_URL1
-        value: https://backend-service.onrender.com
-      - key: NEXT_PUBLIC_AUTHORIZER_CONTRACT_ADDRESS
-        sync: false
-      - key: NEXT_PUBLIC_PRESALE_CONTRACT_ADDRESS
-        sync: false

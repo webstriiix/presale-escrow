@@ -43,6 +43,8 @@ const Currencies = [
  // { name: "Wrapped Bitcoin", symbol: "WBTC", iconURL: "img/currencies/WBTC.png", address: "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599" }, // Mainnet WBTC
 ];
 
+export type Currency = (typeof Currencies)[number];
+
 
 // Contract configuration
 // SEPOLIA TESTNET
@@ -72,13 +74,18 @@ const PresaleForm = () => {
  const [isVerified, setIsVerified] = useState(false);
  const [verificationStatus, setVerificationStatus] = useState('pending'); // 'pending', 'verified', 'rejected'
  const [selectedCurrency, setSelectedCurrency] = useState('ETH');
- const [amount, setAmount] = useState(0);
+ const [amountInput, setAmountInput] = useState("");
  const [userBalance, setUserBalance] = useState(0);
   const [showCountryModal, setShowCountryModal] = useState(false);
   const [selectedCountry, setSelectedCountry] = useState<'US' | 'Other'>('Other');
   const { address, isConnected } = useAccount();
  const { signMessageAsync } = useSignMessage();
  const { data: walletClient } = useWalletClient();
+
+ const amount = amountInput ? Number(amountInput) : 0;
+
+ const selectedCurrencyData =
+   Currencies.find((currency) => currency.symbol === selectedCurrency) ?? Currencies[0];
 
 
  // Check verification status from backend
@@ -225,7 +232,7 @@ const PresaleForm = () => {
 
  const handleBuyTokens = async () => {
   
-  if (!isConnected || !address) return alert("Please connect your wallet first");
+ if (!isConnected || !address) return alert("Please connect your wallet first");
   if (!amount || amount <= 0) return alert("Please enter a valid amount to purchase");
   // if (!isVerified) return alert("Please complete verification first");
 
@@ -246,8 +253,12 @@ const PresaleForm = () => {
     const browserProvider = new ethers.BrowserProvider(walletClient);
     const signer = await browserProvider.getSigner();
 
-    const selectedCurrencyData = Currencies.find(c => c.symbol === selectedCurrency);
-    const isNative = selectedCurrency === "ETH";
+   const isNative = selectedCurrency === "ETH";
+   if (isNative && userBalance < amount) {
+     setLoading(false);
+     alert("Insufficient ETH balance to cover the selected purchase amount.");
+     return;
+   }
     const paymentToken = isNative
       ? NATIVE_ADDRESS
       : selectedCurrencyData?.address || NATIVE_ADDRESS;
@@ -326,7 +337,7 @@ const PresaleForm = () => {
 
     if (isNative) {
       // Native purchase
-      const ethAmount = ethers.parseEther(amount.toString());
+      const ethAmount = ethers.parseEther(amountInput);
       console.log("💰 Buying with native:", ethAmount.toString());
 
       tx = await presaleContract.buyWithNativeVoucher(
@@ -338,7 +349,7 @@ const PresaleForm = () => {
     } else {
       // ERC20 purchase
       const tokenContractRead = new ethers.Contract(paymentToken, ERC20_ABI, provider);
-      const tokenAmount = ethers.parseUnits(amount.toString(), decimals);
+      const tokenAmount = ethers.parseUnits(amountInput, decimals);
 
       const allowance = await tokenContractRead.allowance(address, PRESALE_CONTRACT_ADDRESS);
       console.log("💳 Current allowance:", allowance.toString());
@@ -390,26 +401,37 @@ const PresaleForm = () => {
      <h2 className="text-bg-logo font-semibold text-sm md:text-base">You deposit</h2>
      <div className="md:mb-2 mb-1 mt-2 mx-auto flex items-center justify-center flex-wrap md:gap-2 gap-1">
        {Currencies.slice(0, 4).map((currency, i) => (
-         <CurrencyRadio key={i} symbol={currency.symbol} iconURL={currency.iconURL} />
+         <CurrencyRadio
+           key={i}
+           symbol={currency.symbol}
+           iconURL={currency.iconURL}
+           checked={selectedCurrency === currency.symbol}
+           onSelect={() => setSelectedCurrency(currency.symbol)}
+         />
        ))}
      </div>
      <div className="mb-3 mx-auto flex items-center justify-center flex-wrap md:gap-2 gap-1">
        <div className="flex-[0.5_1_0]"></div>
        {Currencies.slice(4, 7).map((currency, i) => (
-         <CurrencyRadio key={i} symbol={currency.symbol} iconURL={currency.iconURL} />
+         <CurrencyRadio
+           key={i}
+           symbol={currency.symbol}
+           iconURL={currency.iconURL}
+           checked={selectedCurrency === currency.symbol}
+           onSelect={() => setSelectedCurrency(currency.symbol)}
+         />
        ))}
        <div className="flex-[0.5_1_0]"></div>
      </div>
 
-
-     <CurrentBalance currentBalance={userBalance} currency={{ iconURL: "img/currencies/ETH.png", symbol: "ETH" }} />
+     <CurrentBalance currentBalance={userBalance} currency={{ iconURL: selectedCurrencyData.iconURL, symbol: selectedCurrencyData.symbol }} />
      <CurrencyInput
        currencyBalance={userBalance}
-       currencyIconURL="img/currencies/ETH.png"
+       currencyIconURL={selectedCurrencyData.iconURL}
        currencySymbol={selectedCurrency}
        usdValue={4200}
-       value={amount}
-       onChange={(value) => setAmount(value)}
+       value={amountInput}
+       onChange={(value) => setAmountInput(value)}
      />
      <GasFee />
 

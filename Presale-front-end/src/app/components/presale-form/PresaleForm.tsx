@@ -3,7 +3,6 @@
 
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useAccount, useSignMessage, useWalletClient } from "wagmi";
-import snsWebSdk from "@sumsub/websdk";
 import axios from "axios";
 import { BrowserProvider, Contract, Interface, JsonRpcProvider, formatUnits, parseEther, parseUnits } from "ethers";
 

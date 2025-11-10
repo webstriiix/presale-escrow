@@ -1,0 +1,62 @@
+services:
+  # 🟢 BACKEND SERVICE (Node.js + Express)
+  - type: web
+    name: backend-service
+    env: node
+    rootDir: backened
+    buildCommand: npm install
+    startCommand: npm start
+    plan: free
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NODE_VERSION
+        value: 18
+      # 🔐 Variables de entorno del backend
+      - key: SUMSUB_BASE_URL
+        value: https://api.sumsub.com
+      - key: SUMSUB_APP_TOKEN
+        sync: false
+      - key: SUMSUB_SECRET_KEY
+        sync: false
+      - key: SUMSUB_LEVEL_NAME_US
+        value: "Us citizen"
+      - key: SUMSUB_LEVEL_NAME_OTHER
+        value: id-and-liveness
+      - key: RPC_URL
+        sync: false
+      - key: PRIVATE_KEY
+        sync: false
+      - key: AUTHORIZE_CONTRACT_ADDRESS
+        sync: false
+      - key: PRESALE_CONTRACT_ADDRESS
+        sync: false
+      - key: CHAIN_ID
+        sync: false
+      - key: PORT
+        sync: false
+
+  # 🔵 FRONTEND SERVICE (Next.js 15)
+  - type: web
+    name: frontend-service
+    env: node
+    rootDir: Presale-front-end
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    plan: free
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NODE_VERSION
+        value: 18
+      # 🌍 Variables públicas para el frontend
+      - key: NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID
+        sync: false
+      - key: NEXT_PUBLIC_API_URL
+        sync: false
+      - key: NEXT_PUBLIC_API_URL1
+        sync: false
+      - key: NEXT_PUBLIC_AUTHORIZER_CONTRACT_ADDRESS
+        sync: false
+      - key: NEXT_PUBLIC_PRESALE_CONTRACT_ADDRESS
+        sync: false

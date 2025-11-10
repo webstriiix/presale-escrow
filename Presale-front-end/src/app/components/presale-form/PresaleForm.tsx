@@ -17,6 +17,7 @@ import SupplyStatus from "./SupplyStatus";
 import TermsCheckbox from "./TermsCheckbox";
 import TokenBalance from "./TokenBalance";
 import TokenPrice from "./TokenPrice";
+import VerificationScreen from "./VerificationScreen";
 
 
 const DEFAULT_RPC_URL = process.env.NEXT_PUBLIC_RPC_URL || "https://ethereum.publicnode.com";
@@ -192,6 +193,9 @@ const PresaleForm = () => {
  const [tokenUsdPrice, setTokenUsdPrice] = useState("0.015");
   const [showCountryModal, setShowCountryModal] = useState(false);
   const [selectedCountry, setSelectedCountry] = useState<'US' | 'Other'>('Other');
+  const [tokenAmount, setTokenAmount] = useState<number>(0);
+  const [showVerificationScreen, setShowVerificationScreen] = useState(false);
+
   const { address, isConnected } = useAccount();
  const { signMessageAsync } = useSignMessage();
  const { data: walletClient } = useWalletClient();
@@ -227,6 +231,21 @@ const PresaleForm = () => {
      }
    }
  }, [currencyDataList, selectedCurrencyData, selectedCurrency]);
+
+useEffect(() => {
+  const amount = parseFloat(amountInput || "0");
+  const currencyUsd = selectedCurrencyData?.priceUsd || 0;
+  const escrowUsd = parseFloat(tokenUsdPrice || "0");
+
+  if (amount > 0 && currencyUsd > 0 && escrowUsd > 0) {
+    const usdValue = amount * currencyUsd;
+    const escrowTokens = usdValue / escrowUsd;
+    setTokenAmount(escrowTokens);
+  } else {
+    setTokenAmount(0);
+  }
+}, [amountInput, selectedCurrencyData, tokenUsdPrice]);
+
 
 const getRpcProvider = () => new JsonRpcProvider(DEFAULT_RPC_URL, DEFAULT_CHAIN_ID);
 
@@ -436,65 +455,41 @@ useEffect(() => {
 
  const startVerification = async (countryCode: 'US' | 'Other') => {
   try {
-    setLoading(true);
+    // 🔹 Registramos el país en backend (sin lanzar el SDK)
+    await axios.post(
+      `${process.env.NEXT_PUBLIC_API_URL || 'https://dynastical-xzavier-unsanguinarily.ngrok-free.dev'}/api/verify/start`,
+      {
+        userId: address,
+        email: "user@example.com",
+        phone: "+1234567890",
+        country: countryCode === 'US' ? 'US' : 'Other',
+      }
+    );
 
-    const response = await axios.post(`${process.env.NEXT_PUBLIC_API_URL || 'https://dynastical-xzavier-unsanguinarily.ngrok-free.dev'}/api/verify/start`, {
-      userId: address,
-      email: "user@example.com",
-      phone: "+1234567890",
-      country: countryCode === 'US' ? 'US' : 'Other',
-    });
-
-    const { token } = response.data;
-    console.log("✅ Access token received:", token, "Response:", response.data);
-
-    const snsWebSdkInstance = snsWebSdk
-      .init(token, () => Promise.resolve(token))
-      .withConf({
-        lang: "en",
-        theme: "dark",
-      })
-      .withOptions({
-        addViewportTag: false,
-        adaptIframeHeight: true,
-      })
-      .on("idCheck.onStepCompleted", (payload) => {
-        console.log("✅ Verification step completed:", payload);
-        if (address) {
-          setTimeout(() => checkVerificationStatus(address), 3000);
-        }
-      })
-      .on("idCheck.onError", (error) => {
-        console.error("❌ SDK Error:", error);
-        setVerificationStatus('rejected');
-        setIsVerified(false);
-      })
-      .build();
-
-    snsWebSdkInstance.launch("#sumsub-websdk-container");
+    // 🔹 Mostramos pantalla de verificación (el SDK se lanza desde ahí)
+    setShowVerificationScreen(true);
   } catch (err: any) {
     console.error("❌ Error starting verification:", err);
-    if (err.code === 'NETWORK_ERROR' || err.message === 'Network Error') {
-      alert("Cannot connect to backend server. Make sure it's running on port 3000.");
-    } else if (err.response?.status === 404) {
-      alert("Backend API endpoint not found. Check if the server is running correctly.");
-    } else {
-      alert(`Failed to start verification: ${err.response?.data?.error || err.message}`);
-    }
-  } finally {
-    setLoading(false);
+    alert(`Failed to start verification: ${err.message}`);
   }
- };
+};
 
- const handleVerifyClick = () => {
-  setShowCountryModal(true);
- };
+  const handleVerifyClick = () => {
+    if (!isConnected) {
+      alert("Please connect your wallet first");
+      return;
+    }
+    setShowCountryModal(true);
+  };
+
 
  const handleCountryConfirm = async () => {
-  setShowCountryModal(false);
-  const code = selectedCountry === 'US' ? 'US' : 'Other';
-  await startVerification(code);
- };
+    setShowCountryModal(false);
+    const code = selectedCountry === 'US' ? 'US' : 'Other';
+    // Ya no lanzamos el SDK directamente — solo mostramos la pantalla
+    await startVerification(code);
+  };
+
 
  const handleBuyTokens = async () => {
   
@@ -683,6 +678,19 @@ const handleClaimTokens = async () => {
 
  return (
    <>
+    {showVerificationScreen && (
+      <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+        <VerificationScreen
+          userId={address ?? ""}
+          countryCode={selectedCountry}
+          onClose={() => {
+            setShowVerificationScreen(false);
+            if (address) checkVerificationStatus(address);
+          }}
+        />
+      </div>
+    )}
+
    <form id="presale-form" className="relative max-w-[720px] py-4 px-4 md:px-6 md:py-8 mb-4 rounded-md border border-body-text overflow-hidden">
     <FormTitle />
     <TokenPrice title="1 $ESCROW" subtitle={`$${tokenUsdPrice}`} />
@@ -732,7 +740,17 @@ const handleClaimTokens = async () => {
      <GasFee />
 
 
-     <TokenPrice title="You will receive" subtitle={`${escrowBalance} $ESCROW`} />
+     <TokenPrice
+        title="You will receive"
+        subtitle={
+          loading
+            ? "Calculating..."
+            : tokenAmount > 0
+              ? `${tokenAmount.toLocaleString(undefined, { maximumFractionDigits: 2 })} $ESCROW`
+              : "—"
+        }
+      />
+
      <TokenBalance
        balance={escrowBalance}
        loading={refreshingEscrow}
@@ -803,17 +821,17 @@ const handleClaimTokens = async () => {
     )}
 
 
-     <TermsCheckbox />
+     {(isConnected && isVerified) && <TermsCheckbox />}
      <img id="bg-form" src="/img/form-bg.jpg" className="absolute opacity-15 w-full h-full inset-0 -z-50" alt="" />
    </form>
-  <button
-    type="button"
-    disabled={loading || !isConnected}
-    onClick={handleBuyTokens}
-    className={`w-full py-3 md:py-4 mt-2 font-medium border text-sm md:text-base tracking-tight rounded-full cursor-pointer duration-200 border-orange-500 text-orange-500 hover:bg-orange-500 hover:text-black ${!isConnected ? 'opacity-50 cursor-not-allowed' : ''}`}
-  >
-    {loading ? 'Testing Purchase...' : 'Test Buy (dev)'}
-  </button>
+    {/* <button
+      type="button"
+      disabled={loading || !isConnected}
+      onClick={handleBuyTokens}
+      className={`w-full py-3 md:py-4 mt-2 font-medium border text-sm md:text-base tracking-tight rounded-full cursor-pointer duration-200 border-orange-500 text-orange-500 hover:bg-orange-500 hover:text-black ${!isConnected ? 'opacity-50 cursor-not-allowed' : ''}`}
+    >
+      {loading ? 'Testing Purchase...' : 'Test Buy (dev)'}
+    </button> */}
  
  </>
  );
@@ -821,213 +839,3 @@ const handleClaimTokens = async () => {
 
 
 export default PresaleForm;
-
-
-//  const handleBuyTokens = async () => {
-//    if (!isConnected || !address) {
-//      alert("Please connect your wallet first");
-//      return;
-//    }
-
-
-//    // if (!isVerified) {
-//    //   alert("Please complete verification first");
-//    //   return;
-//    // }
-
-
-//    if (!amount || amount <= 0) {
-//      alert("Please enter an amount to purchase");
-//      return;
-//    }
-
-
-//    console.log("💰 Amount:", amount);
-//    console.log("💰 Selected currency:", selectedCurrency);
-//    console.log("💰 Address:", address);
-
-
-//    try {
-//      setLoading(true);
-
-
-//      // Step 1: Prepare currency data
-//      const selectedCurrencyData = Currencies.find(c => c.symbol === selectedCurrency);
-//      const isNativeCurrency = selectedCurrency === 'ETH';
-//      const paymentTokenAddress = isNativeCurrency ? NATIVE_ADDRESS : (selectedCurrencyData?.address || NATIVE_ADDRESS);
-
-
-//     console.log("Step 2: Fetch user nonce from Authorizer and request voucher from backend");
-//     // Ensure wallet is connected before using BrowserProvider
-//     if (!walletClient) {
-//       throw new Error("Wallet not connected");
-//     }
-    
-//     const provider = new ethers.BrowserProvider(walletClient);
-//     // Fetch nonce from Authorizer
-    
-//     const authAddr = process.env.NEXT_PUBLIC_AUTHORIZER_CONTRACT_ADDRESS;
-//     if (!authAddr) throw new Error("NEXT_PUBLIC_AUTHORIZER_CONTRACT_ADDRESS not set");
-    
-//     const authorizer = new ethers.Contract(authAddr, AUTHORIZER_ABI, provider);
-//     const chainNonce = await authorizer.getNonce(address);
-
-//     console.log("✅ Chain nonce:", chainNonce);
-
-//     console.log("✅ Address:", address);
-//     console.log("✅ Payment token address:", paymentTokenAddress);
-//     console.log("✅ USD amount:", amount);
-//     console.log("✅ User ID:", address);
-//     console.log("✅ User nonce:", chainNonce?.toString?.());
-
-//     // Determine token decimals (18 for native ETH, query ERC20 otherwise)
-//     let tokenDecimals = 18;
-//     if (!isNativeCurrency) {
-//       try {
-//         const decContract = new ethers.Contract(paymentTokenAddress, ERC20_ABI, provider);
-//         tokenDecimals = await decContract.decimals();
-//       } catch (e) {
-//         console.warn("Could not fetch token decimals (pre-voucher), defaulting to 18:", e);
-//         tokenDecimals = 18;
-//       }
-//     }
-
-//     // Step 2: Request voucher from backend including user nonce and token decimals
-//     const response = await axios.post(`${process.env.NEXT_PUBLIC_API_URL || 'https://dynastical-xzavier-unsanguinarily.ngrok-free.dev'}/api/presale/voucher`, {
-//       buyer: address,
-//       beneficiary: address,
-//       paymentToken: paymentTokenAddress,
-//       usdAmount: amount,
-//       userId: address,
-//       usernonce: chainNonce?.toString?.(),
-//       decimals: tokenDecimals
-//     });
-
-
-//      console.log(" Voucher response:", response.data);
-
-
-//      const { voucher, signature } = response.data;
-//      console.log(" Voucher received:", { voucher, signature });
-
-
-//      console.log("Step 3: Create contract instances");
-//      // Step 3: Create contract instances
-//      if (!walletClient) {
-//        throw new Error("Wallet not connected");
-//      }
-
-//      console.log(" PRESALE_CONTRACT_ADDRESS:", PRESALE_CONTRACT_ADDRESS);
-
-
-//     // provider already created above
-//      const signer = await provider.getSigner();
-//      const presaleContract = new ethers.Contract(PRESALE_CONTRACT_ADDRESS, PRESALE_ABI, signer);
-    
-//      // Prepare voucher struct for contract call
-//      const voucherStruct = [
-//        voucher.buyer,
-//        voucher.beneficiary,
-//        voucher.paymentToken,
-//        voucher.usdLimit,
-//        voucher.nonce,
-//        voucher.deadline,
-//        voucher.presale
-//      ];
-
-//      const beneficiary = address; // User's wallet address
-     
-//      let tx;
-
-
-//      if (isNativeCurrency) {
-//        // Step 4a: Purchase with native ETH using buyWithNativeVoucher
-//        const ethAmount = ethers.parseEther(amount.toString()); // Convert to wei
-      
-//        console.log("💰 Purchasing with ETH:", {
-//          amount: ethAmount.toString(),
-//          beneficiary,
-//          voucher,
-//          signature
-//        });
-
-
-//        // Call buyWithNativeVoucher with msg.value
-//        tx = await presaleContract.buyWithNativeVoucher(
-//          beneficiary,
-//          voucherStruct,
-//          signature,
-//          { value: ethAmount } // Send ETH with the transaction
-//        );
-//      } else {
-//        // Step 4b: Purchase with ERC20 token using buyWithTokenVoucher
-//        // First, get token decimals (default to 18 if not available)
-//       const tokenContract = new ethers.Contract(paymentTokenAddress, ERC20_ABI, signer);
-//       let tokenDecimals: number;
-//       try {
-//         tokenDecimals = await tokenContract.decimals();
-//       } catch (e) {
-//         console.error("Could not fetch token decimals from token contract:", e);
-//         alert("Failed to read token decimals from the token contract.");
-//         setLoading(false);
-//         return;
-//       }
-
-
-//        const tokenAmount = ethers.parseUnits(amount.toString(), tokenDecimals);
-      
-//        console.log("💳 Purchasing with token:", {
-//          token: paymentTokenAddress,
-//          amount: tokenAmount.toString(),
-//          decimals: tokenDecimals,
-//          beneficiary,
-//          voucher,
-//          signature
-//        });
-
-
-//        // Check current allowance
-//        const currentAllowance = await tokenContract.allowance(address, PRESALE_CONTRACT_ADDRESS);
-//        console.log("Current allowance:", currentAllowance.toString());
-
-
-//        // Approve token spending if needed
-//        if (currentAllowance < tokenAmount) {
-//          console.log("Approving token spending...");
-//          const approveTx = await tokenContract.approve(PRESALE_CONTRACT_ADDRESS, tokenAmount);
-//          console.log("Approval transaction submitted:", approveTx.hash);
-//          await approveTx.wait();
-//          console.log("✅ Token approved");
-//        }
-
-
-//        // Call buyWithTokenVoucher
-//        tx = await presaleContract.buyWithTokenVoucher(
-//          paymentTokenAddress,
-//          tokenAmount,
-//          beneficiary,
-//          voucherStruct,
-//          signature
-//        );
-//      }
-
-
-//      console.log("Transaction submitted:", tx.hash);
-    
-//      // Wait for transaction confirmation
-//      const receipt = await tx.wait();
-//      console.log("Transaction confirmed:", receipt);
-
-
-//      alert(`Purchase successful! Transaction hash: ${tx.hash}`);
-//      console.log("✅ Token purchase completed successfully!");
-
-
-//    } catch (err: any) {
-//      console.error("❌ Error buying tokens:", err);
-//      const errorMessage = err.response?.data?.error || err.reason || err.message || "Unknown error";
-//      alert(`Failed to buy tokens: ${errorMessage}`);
-//    } finally {
-//      setLoading(false);
-//    }
-//  };

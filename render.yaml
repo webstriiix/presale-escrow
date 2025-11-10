@@ -48,7 +48,7 @@ services:
       - key: NODE_ENV
         value: production
       - key: NODE_VERSION
-        value: 18
+        value: 20
       # 🌍 Variables públicas para el frontend
       - key: NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID
         sync: false

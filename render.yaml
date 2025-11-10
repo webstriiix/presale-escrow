@@ -53,9 +53,9 @@ services:
       - key: NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID
         sync: false
       - key: NEXT_PUBLIC_API_URL
-        sync: false
+        value: https://backend-service.onrender.com
       - key: NEXT_PUBLIC_API_URL1
-        sync: false
+        value: https://backend-service.onrender.com
       - key: NEXT_PUBLIC_AUTHORIZER_CONTRACT_ADDRESS
         sync: false
       - key: NEXT_PUBLIC_PRESALE_CONTRACT_ADDRESS

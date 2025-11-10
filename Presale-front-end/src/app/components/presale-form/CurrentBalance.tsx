@@ -1,7 +1,7 @@
 import { Currency } from "./PresaleForm";
 
 type Props = {
-  currentBalance: number;
+  currentBalance: string;
   currency: Pick<Currency, 'symbol'|'iconURL'>;
 }
 

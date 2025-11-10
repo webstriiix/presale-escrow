@@ -10,7 +10,8 @@ type Props = {
 const SupplyStatus = ({ presaleSupply, tokensSold }: Props) => {
 
   const percentajeSold = useMemo(() => {
-    return Math.floor((tokensSold / presaleSupply) * 100);
+    if (!presaleSupply || presaleSupply <= 0) return 0;
+    return Math.min(100, Math.floor((tokensSold / presaleSupply) * 100));
   }, [tokensSold, presaleSupply]);
 
   function formatQuantity(num: number) {
@@ -29,13 +30,13 @@ const SupplyStatus = ({ presaleSupply, tokensSold }: Props) => {
     <div>
       <div className="w-full flex items-center justify-between flex-nowrap tracking-tighter !text-sm">
         <span className="text-bg-logo font-medium">{formatQuantity(tokensSold)} Tokens sold</span>
-        <span className="text-bg-logo">{formatQuantity(presaleSupply - tokensSold)} Tokens remaining</span>
+        <span className="text-bg-logo">{formatQuantity(Math.max(presaleSupply - tokensSold, 0))} Tokens remaining</span>
       </div>
       <div className="relative w-full my-2 p-1 rounded-l-full rounded-r-full border-body-text border-[1px] ">
         <div style={{ width: `${percentajeSold}%` }} className={`h-2 rounded-l-full rounded-r-full bg-gradient-to-r from-logo-grad-green from-0% via-logo-grad-blue via-30% to-logo-grad-purple to-80%`}></div>
       </div>
       <div className="w-full text-right text-sm font-medium text-bg-logo">
-        Total sale volume: 12.00B
+        Total sale volume: {formatQuantity(presaleSupply)}
       </div>
     </div>
   );

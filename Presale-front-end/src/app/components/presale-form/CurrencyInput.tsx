@@ -1,7 +1,7 @@
 import { useState } from "react";
 
 type Props = {
-  currencyBalance: number;
+  currencyBalance: string;
   currencyIconURL: string;
   currencySymbol: string;
   usdValue: number;
@@ -34,7 +34,8 @@ const CurrencyInput = ({ currencyBalance, currencyIconURL, currencySymbol, usdVa
   };
 
   const handleMaxClick = () => {
-    const maxValue = currencyBalance.toFixed(6);
+    const numericBalance = parseFloat(currencyBalance || "0");
+    const maxValue = numericBalance.toFixed(6);
     handleChange(maxValue);
   };
   

@@ -112,6 +112,7 @@ const STORAGE_FILE = path.join(__dirname, 'storage.json');
 // In-memory storage for verification status (persisted to file)
 const verifiedUsers = new Map(); // userId -> { verified: boolean, reviewResult: string, verifiedAt: Date, buyerAddress: string }
 const userNonces = new Map(); // buyerAddress -> nonce counter (contract tracks by buyer address)
+let cachedDeadline = null; // Cache deadline so same request = same signature
 
 // ========== File Storage Functions ==========
 
@@ -499,10 +500,12 @@ app.post('/api/presale/voucher', async (req, res) => {
     if (!PRESALE_CONTRACT)
       return res.status(500).json({ error: 'PRESALE_CONTRACT not configured.' });
 
-    // Normalize decimals sent from frontend (0-18, default 8 if invalid)
-    let usdDecimals = Number(decimals);
+    // USD amounts always use 8 decimals (not token decimals)
+    const usdDecimals = 8;
     console.log('usdDecimals:', usdDecimals);
 
+    // Convert USD amount to proper format - round to 8 decimals max
+    const usdAmountBigInt = ethers.parseUnits(Number(usdAmount).toFixed(8), usdDecimals);
 
        // ====== Initialize Signer ======
        if (!signer) {
@@ -515,7 +518,12 @@ app.post('/api/presale/voucher', async (req, res) => {
         }
       }
 
-    const deadline = Math.floor(Date.now() / 1000) + 3600 * 24; // 24 hours validity
+    // Cache deadline for deterministic signatures (same request = same signature)
+    let deadline = cachedDeadline;
+    if (!deadline || deadline < Math.floor(Date.now() / 1000)) {
+      deadline = Math.floor(Date.now() / 1000) + 3600 * 24;
+      cachedDeadline = deadline;
+    }
 
     console.log(`\n🎫 Generating Presale Voucher:
       Buyer: ${buyer}
@@ -530,13 +538,13 @@ app.post('/api/presale/voucher', async (req, res) => {
     `);
 
     
-    console.log('usdAmount:', ethers.parseUnits(String(usdAmount), usdDecimals).toString(),);
+    console.log('usdAmount (parsed):', usdAmountBigInt.toString(),);
 
     const voucher = {
       buyer,
       beneficiary,
       paymentToken,
-      usdLimit: ethers.parseUnits(String(usdAmount), usdDecimals).toString(),
+      usdLimit: usdAmountBigInt.toString(),
       nonce: usernonce,
       deadline,
       presale: PRESALE_CONTRACT

@@ -20,628 +20,43 @@ import TokenPrice from "./TokenPrice";
 
 
 const Currencies = [
- { name: "Ethereum", symbol: "ETH", iconURL: "img/currencies/ETH.png", address: "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2" },
- { name: "USD Coin", symbol: "USDC", iconURL: "img/currencies/USDC.png", address: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48" },
- { name: "Tether USD", symbol: "USDT", iconURL: "img/currencies/USDT.png", address: "0x514910771AF9Ca656af840dff83E8264EcF986CA" },
- { name: "Chainlink", symbol: "LINK", iconURL: "img/currencies/LINK.png", address: "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599" },
- { name: "Wrapped BNB", symbol: "WBNB", iconURL: "img/currencies/WBNB.png", address: "0x...WBNB_ADDRESS" },
- { name: "Wrapped Ethereum", symbol: "WETH", iconURL: "img/currencies/WETH.png", address: "0x...WETH_ADDRESS" },
- { name: "Wrapped Bitcoin", symbol: "WBTC", iconURL: "img/currencies/WBTC.png", address: "0x...WBTC_ADDRESS" },
+ // SEPOLIA TESTNET
+ { name: "Ethereum", symbol: "ETH", iconURL: "img/currencies/ETH.png", address: "0x7b79995e5f793A07Bc00c21412e50Ecae098E7f9" }, // Sepolia WETH
+ // { name: "Ethereum", symbol: "ETH", iconURL: "img/currencies/ETH.png", address: "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2" }, // Mainnet WETH
+
+ { name: "Test USDT", symbol: "USDT", iconURL: "img/currencies/USDT.png", address: "0x40335280FAE64DE6BB9d775EFB0771Ae22bb7828" }, // Sepolia Test USDT
+ // { name: "Tether USD", symbol: "USDT", iconURL: "img/currencies/USDT.png", address: "0xdAC17F958D2ee523a2206206994597C13D831ec7" }, // Mainnet USDT
+
+ { name: "USD Coin", symbol: "USDC", iconURL: "img/currencies/USDC.png", address: "0x0000000000000000000000000000000000000000" }, // Sepolia USDC not available
+ // { name: "USD Coin", symbol: "USDC", iconURL: "img/currencies/USDC.png", address: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48" }, // Mainnet USDC
+
+ { name: "Chainlink", symbol: "LINK", iconURL: "img/currencies/LINK.png", address: "0x0000000000000000000000000000000000000000" }, // Sepolia LINK not available
+ // { name: "Chainlink", symbol: "LINK", iconURL: "img/currencies/LINK.png", address: "0x514910771AF9Ca656af840dff83E8264EcF986CA" }, // Mainnet LINK
+
+ { name: "Wrapped BNB", symbol: "WBNB", iconURL: "img/currencies/WBNB.png", address: "0x0000000000000000000000000000000000000000" }, // Sepolia WBNB not available
+ // { name: "Wrapped BNB", symbol: "WBNB", iconURL: "img/currencies/WBNB.png", address: "0x...WBNB_ADDRESS" }, // Mainnet WBNB
+
+ { name: "Wrapped Ethereum", symbol: "WETH", iconURL: "img/currencies/WETH.png", address: "0x7b79995e5f793A07Bc00c21412e50Ecae098E7f9" }, // Sepolia WETH
+ // { name: "Wrapped Ethereum", symbol: "WETH", iconURL: "img/currencies/WETH.png", address: "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2" }, // Mainnet WETH
+
+ { name: "Wrapped Bitcoin", symbol: "WBTC", iconURL: "img/currencies/WBTC.png", address: "0x0000000000000000000000000000000000000000" }, // Sepolia WBTC not available
+ // { name: "Wrapped Bitcoin", symbol: "WBTC", iconURL: "img/currencies/WBTC.png", address: "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599" }, // Mainnet WBTC
 ];
 
 
 // Contract configuration
+// SEPOLIA TESTNET
 const PRESALE_CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_PRESALE_CONTRACT_ADDRESS || "0x...PRESALE_CONTRACT_ADDRESS";
-const NATIVE_ADDRESS = "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"; // ETH native address
+// MAINNET: const PRESALE_CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_PRESALE_CONTRACT_ADDRESS || "0x...MAINNET_PRESALE_ADDRESS";
+
+const NATIVE_ADDRESS = "0x0000000000000000000000000000000000000000"; // ETH native address (zero address)
+// const NATIVE_ADDRESS = "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"; // Mainnet WETH
 const PRESALE_ABI = [
  "function buyWithNativeVoucher(address beneficiary, tuple(address buyer, address beneficiary, address paymentToken, uint256 usdLimit, uint256 nonce, uint256 deadline, address presale) voucher, bytes signature) external payable",
  "function buyWithTokenVoucher(address token, uint256 amount, address beneficiary, tuple(address buyer, address beneficiary, address paymentToken, uint256 usdLimit, uint256 nonce, uint256 deadline, address presale) voucher, bytes signature) external"
 ];
-// Authorizer ABI (minimal)
-const AUTHORIZER_ABI = [
-    {
-      "inputs": [
-        {
-          "internalType": "address",
-          "name": "_signer",
-          "type": "address"
-        },
-        {
-          "internalType": "address",
-          "name": "_owner",
-          "type": "address"
-        }
-      ],
-      "stateMutability": "nonpayable",
-      "type": "constructor"
-    },
-    {
-      "inputs": [],
-      "name": "ECDSAInvalidSignature",
-      "type": "error"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "uint256",
-          "name": "length",
-          "type": "uint256"
-        }
-      ],
-      "name": "ECDSAInvalidSignatureLength",
-      "type": "error"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "bytes32",
-          "name": "s",
-          "type": "bytes32"
-        }
-      ],
-      "name": "ECDSAInvalidSignatureS",
-      "type": "error"
-    },
-    {
-      "inputs": [],
-      "name": "InsufficientLimit",
-      "type": "error"
-    },
-    {
-      "inputs": [],
-      "name": "InvalidNonce",
-      "type": "error"
-    },
-    {
-      "inputs": [],
-      "name": "InvalidPaymentToken",
-      "type": "error"
-    },
-    {
-      "inputs": [],
-      "name": "InvalidPresaleAddress",
-      "type": "error"
-    },
-    {
-      "inputs": [],
-      "name": "InvalidShortString",
-      "type": "error"
-    },
-    {
-      "inputs": [],
-      "name": "InvalidSignature",
-      "type": "error"
-    },
-    {
-      "inputs": [],
-      "name": "InvalidSigner",
-      "type": "error"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "address",
-          "name": "owner",
-          "type": "address"
-        }
-      ],
-      "name": "OwnableInvalidOwner",
-      "type": "error"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "address",
-          "name": "account",
-          "type": "address"
-        }
-      ],
-      "name": "OwnableUnauthorizedAccount",
-      "type": "error"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "string",
-          "name": "str",
-          "type": "string"
-        }
-      ],
-      "name": "StringTooLong",
-      "type": "error"
-    },
-    {
-      "inputs": [],
-      "name": "VoucherAlreadyConsumed",
-      "type": "error"
-    },
-    {
-      "inputs": [],
-      "name": "VoucherExpired",
-      "type": "error"
-    },
-    {
-      "inputs": [],
-      "name": "ZeroAddress",
-      "type": "error"
-    },
-    {
-      "anonymous": false,
-      "inputs": [
-        {
-          "indexed": true,
-          "internalType": "address",
-          "name": "buyer",
-          "type": "address"
-        },
-        {
-          "indexed": false,
-          "internalType": "string",
-          "name": "reason",
-          "type": "string"
-        }
-      ],
-      "name": "AuthorizationFailed",
-      "type": "event"
-    },
-    {
-      "anonymous": false,
-      "inputs": [],
-      "name": "EIP712DomainChanged",
-      "type": "event"
-    },
-    {
-      "anonymous": false,
-      "inputs": [
-        {
-          "indexed": true,
-          "internalType": "address",
-          "name": "previousOwner",
-          "type": "address"
-        },
-        {
-          "indexed": true,
-          "internalType": "address",
-          "name": "newOwner",
-          "type": "address"
-        }
-      ],
-      "name": "OwnershipTransferred",
-      "type": "event"
-    },
-    {
-      "anonymous": false,
-      "inputs": [
-        {
-          "indexed": true,
-          "internalType": "address",
-          "name": "oldSigner",
-          "type": "address"
-        },
-        {
-          "indexed": true,
-          "internalType": "address",
-          "name": "newSigner",
-          "type": "address"
-        }
-      ],
-      "name": "SignerUpdated",
-      "type": "event"
-    },
-    {
-      "anonymous": false,
-      "inputs": [
-        {
-          "indexed": true,
-          "internalType": "address",
-          "name": "buyer",
-          "type": "address"
-        },
-        {
-          "indexed": false,
-          "internalType": "uint256",
-          "name": "nonce",
-          "type": "uint256"
-        },
-        {
-          "indexed": false,
-          "internalType": "bytes32",
-          "name": "voucherHash",
-          "type": "bytes32"
-        }
-      ],
-      "name": "VoucherConsumed",
-      "type": "event"
-    },
-    {
-      "inputs": [
-        {
-          "components": [
-            {
-              "internalType": "address",
-              "name": "buyer",
-              "type": "address"
-            },
-            {
-              "internalType": "address",
-              "name": "beneficiary",
-              "type": "address"
-            },
-            {
-              "internalType": "address",
-              "name": "paymentToken",
-              "type": "address"
-            },
-            {
-              "internalType": "uint256",
-              "name": "usdLimit",
-              "type": "uint256"
-            },
-            {
-              "internalType": "uint256",
-              "name": "nonce",
-              "type": "uint256"
-            },
-            {
-              "internalType": "uint256",
-              "name": "deadline",
-              "type": "uint256"
-            },
-            {
-              "internalType": "address",
-              "name": "presale",
-              "type": "address"
-            }
-          ],
-          "internalType": "struct Authorizer.Voucher",
-          "name": "voucher",
-          "type": "tuple"
-        },
-        {
-          "internalType": "bytes",
-          "name": "signature",
-          "type": "bytes"
-        },
-        {
-          "internalType": "address",
-          "name": "paymentToken",
-          "type": "address"
-        },
-        {
-          "internalType": "uint256",
-          "name": "usdAmount",
-          "type": "uint256"
-        }
-      ],
-      "name": "authorize",
-      "outputs": [
-        {
-          "internalType": "bool",
-          "name": "",
-          "type": "bool"
-        }
-      ],
-      "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "bytes32",
-          "name": "",
-          "type": "bytes32"
-        }
-      ],
-      "name": "consumedVouchers",
-      "outputs": [
-        {
-          "internalType": "bool",
-          "name": "",
-          "type": "bool"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [],
-      "name": "eip712Domain",
-      "outputs": [
-        {
-          "internalType": "bytes1",
-          "name": "fields",
-          "type": "bytes1"
-        },
-        {
-          "internalType": "string",
-          "name": "name",
-          "type": "string"
-        },
-        {
-          "internalType": "string",
-          "name": "version",
-          "type": "string"
-        },
-        {
-          "internalType": "uint256",
-          "name": "chainId",
-          "type": "uint256"
-        },
-        {
-          "internalType": "address",
-          "name": "verifyingContract",
-          "type": "address"
-        },
-        {
-          "internalType": "bytes32",
-          "name": "salt",
-          "type": "bytes32"
-        },
-        {
-          "internalType": "uint256[]",
-          "name": "extensions",
-          "type": "uint256[]"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [],
-      "name": "getDomainSeparator",
-      "outputs": [
-        {
-          "internalType": "bytes32",
-          "name": "",
-          "type": "bytes32"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "address",
-          "name": "user",
-          "type": "address"
-        }
-      ],
-      "name": "getNonce",
-      "outputs": [
-        {
-          "internalType": "uint256",
-          "name": "",
-          "type": "uint256"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "components": [
-            {
-              "internalType": "address",
-              "name": "buyer",
-              "type": "address"
-            },
-            {
-              "internalType": "address",
-              "name": "beneficiary",
-              "type": "address"
-            },
-            {
-              "internalType": "address",
-              "name": "paymentToken",
-              "type": "address"
-            },
-            {
-              "internalType": "uint256",
-              "name": "usdLimit",
-              "type": "uint256"
-            },
-            {
-              "internalType": "uint256",
-              "name": "nonce",
-              "type": "uint256"
-            },
-            {
-              "internalType": "uint256",
-              "name": "deadline",
-              "type": "uint256"
-            },
-            {
-              "internalType": "address",
-              "name": "presale",
-              "type": "address"
-            }
-          ],
-          "internalType": "struct Authorizer.Voucher",
-          "name": "voucher",
-          "type": "tuple"
-        }
-      ],
-      "name": "invalidateVoucher",
-      "outputs": [],
-      "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "bytes32",
-          "name": "voucherHash",
-          "type": "bytes32"
-        }
-      ],
-      "name": "isVoucherConsumed",
-      "outputs": [
-        {
-          "internalType": "bool",
-          "name": "",
-          "type": "bool"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "address",
-          "name": "",
-          "type": "address"
-        }
-      ],
-      "name": "nonces",
-      "outputs": [
-        {
-          "internalType": "uint256",
-          "name": "",
-          "type": "uint256"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [],
-      "name": "owner",
-      "outputs": [
-        {
-          "internalType": "address",
-          "name": "",
-          "type": "address"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [],
-      "name": "renounceOwnership",
-      "outputs": [],
-      "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "address",
-          "name": "_newSigner",
-          "type": "address"
-        }
-      ],
-      "name": "setSigner",
-      "outputs": [],
-      "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
-      "inputs": [],
-      "name": "signer",
-      "outputs": [
-        {
-          "internalType": "address",
-          "name": "",
-          "type": "address"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "address",
-          "name": "newOwner",
-          "type": "address"
-        }
-      ],
-      "name": "transferOwnership",
-      "outputs": [],
-      "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "components": [
-            {
-              "internalType": "address",
-              "name": "buyer",
-              "type": "address"
-            },
-            {
-              "internalType": "address",
-              "name": "beneficiary",
-              "type": "address"
-            },
-            {
-              "internalType": "address",
-              "name": "paymentToken",
-              "type": "address"
-            },
-            {
-              "internalType": "uint256",
-              "name": "usdLimit",
-              "type": "uint256"
-            },
-            {
-              "internalType": "uint256",
-              "name": "nonce",
-              "type": "uint256"
-            },
-            {
-              "internalType": "uint256",
-              "name": "deadline",
-              "type": "uint256"
-            },
-            {
-              "internalType": "address",
-              "name": "presale",
-              "type": "address"
-            }
-          ],
-          "internalType": "struct Authorizer.Voucher",
-          "name": "voucher",
-          "type": "tuple"
-        },
-        {
-          "internalType": "bytes",
-          "name": "signature",
-          "type": "bytes"
-        },
-        {
-          "internalType": "address",
-          "name": "paymentToken",
-          "type": "address"
-        },
-        {
-          "internalType": "uint256",
-          "name": "usdAmount",
-          "type": "uint256"
-        }
-      ],
-      "name": "validateVoucher",
-      "outputs": [
-        {
-          "internalType": "bool",
-          "name": "valid",
-          "type": "bool"
-        },
-        {
-          "internalType": "string",
-          "name": "reason",
-          "type": "string"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    }
-];
+// Authorizer ABI - Complete from Etherscan
+const AUTHORIZER_ABI = [{"inputs":[{"internalType":"address","name":"_signer","type":"address"},{"internalType":"address","name":"_owner","type":"address"}],"stateMutability":"nonpayable","type":"constructor"},{"inputs":[],"name":"ECDSAInvalidSignature","type":"error"},{"inputs":[{"internalType":"uint256","name":"length","type":"uint256"}],"name":"ECDSAInvalidSignatureLength","type":"error"},{"inputs":[{"internalType":"bytes32","name":"s","type":"bytes32"}],"name":"ECDSAInvalidSignatureS","type":"error"},{"inputs":[],"name":"InsufficientLimit","type":"error"},{"inputs":[],"name":"InvalidNonce","type":"error"},{"inputs":[],"name":"InvalidPaymentToken","type":"error"},{"inputs":[],"name":"InvalidPresaleAddress","type":"error"},{"inputs":[],"name":"InvalidShortString","type":"error"},{"inputs":[],"name":"InvalidSignature","type":"error"},{"inputs":[],"name":"InvalidSigner","type":"error"},{"inputs":[{"internalType":"address","name":"owner","type":"address"}],"name":"OwnableInvalidOwner","type":"error"},{"inputs":[{"internalType":"address","name":"account","type":"address"}],"name":"OwnableUnauthorizedAccount","type":"error"},{"inputs":[{"internalType":"string","name":"str","type":"string"}],"name":"StringTooLong","type":"error"},{"inputs":[],"name":"VoucherAlreadyConsumed","type":"error"},{"inputs":[],"name":"VoucherExpired","type":"error"},{"inputs":[],"name":"ZeroAddress","type":"error"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"buyer","type":"address"},{"indexed":false,"internalType":"string","name":"reason","type":"string"}],"name":"AuthorizationFailed","type":"event"},{"anonymous":false,"inputs":[],"name":"EIP712DomainChanged","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"previousOwner","type":"address"},{"indexed":true,"internalType":"address","name":"newOwner","type":"address"}],"name":"OwnershipTransferred","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"oldSigner","type":"address"},{"indexed":true,"internalType":"address","name":"newSigner","type":"address"}],"name":"SignerUpdated","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"buyer","type":"address"},{"indexed":false,"internalType":"uint256","name":"nonce","type":"uint256"},{"indexed":false,"internalType":"bytes32","name":"voucherHash","type":"bytes32"}],"name":"VoucherConsumed","type":"event"},{"inputs":[{"components":[{"internalType":"address","name":"buyer","type":"address"},{"internalType":"address","name":"beneficiary","type":"address"},{"internalType":"address","name":"paymentToken","type":"address"},{"internalType":"uint256","name":"usdLimit","type":"uint256"},{"internalType":"uint256","name":"nonce","type":"uint256"},{"internalType":"uint256","name":"deadline","type":"uint256"},{"internalType":"address","name":"presale","type":"address"}],"internalType":"struct Authorizer.Voucher","name":"voucher","type":"tuple"},{"internalType":"bytes","name":"signature","type":"bytes"},{"internalType":"address","name":"paymentToken","type":"address"},{"internalType":"uint256","name":"usdAmount","type":"uint256"}],"name":"authorize","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"bytes32","name":"","type":"bytes32"}],"name":"consumedVouchers","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"eip712Domain","outputs":[{"internalType":"bytes1","name":"fields","type":"bytes1"},{"internalType":"string","name":"name","type":"string"},{"internalType":"string","name":"version","type":"string"},{"internalType":"uint256","name":"chainId","type":"uint256"},{"internalType":"address","name":"verifyingContract","type":"address"},{"internalType":"bytes32","name":"salt","type":"bytes32"},{"internalType":"uint256[]","name":"extensions","type":"uint256[]"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"getDomainSeparator","outputs":[{"internalType":"bytes32","name":"","type":"bytes32"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"user","type":"address"}],"name":"getNonce","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"components":[{"internalType":"address","name":"buyer","type":"address"},{"internalType":"address","name":"beneficiary","type":"address"},{"internalType":"address","name":"paymentToken","type":"address"},{"internalType":"uint256","name":"usdLimit","type":"uint256"},{"internalType":"uint256","name":"nonce","type":"uint256"},{"internalType":"uint256","name":"deadline","type":"uint256"},{"internalType":"address","name":"presale","type":"address"}],"internalType":"struct Authorizer.Voucher","name":"voucher","type":"tuple"}],"name":"invalidateVoucher","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"bytes32","name":"voucherHash","type":"bytes32"}],"name":"isVoucherConsumed","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"","type":"address"}],"name":"nonces","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"owner","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"renounceOwnership","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"_newSigner","type":"address"}],"name":"setSigner","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"signer","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"newOwner","type":"address"}],"name":"transferOwnership","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"components":[{"internalType":"address","name":"buyer","type":"address"},{"internalType":"address","name":"beneficiary","type":"address"},{"internalType":"address","name":"paymentToken","type":"address"},{"internalType":"uint256","name":"usdLimit","type":"uint256"},{"internalType":"uint256","name":"nonce","type":"uint256"},{"internalType":"uint256","name":"deadline","type":"uint256"},{"internalType":"address","name":"presale","type":"address"}],"internalType":"struct Authorizer.Voucher","name":"voucher","type":"tuple"},{"internalType":"bytes","name":"signature","type":"bytes"},{"internalType":"address","name":"paymentToken","type":"address"},{"internalType":"uint256","name":"usdAmount","type":"uint256"}],"name":"validateVoucher","outputs":[{"internalType":"bool","name":"valid","type":"bool"},{"internalType":"string","name":"reason","type":"string"}],"stateMutability":"view","type":"function"}];
   
 
 // ERC20 ABI for token approval
@@ -658,6 +73,7 @@ const PresaleForm = () => {
  const [verificationStatus, setVerificationStatus] = useState('pending'); // 'pending', 'verified', 'rejected'
  const [selectedCurrency, setSelectedCurrency] = useState('ETH');
  const [amount, setAmount] = useState(0);
+ const [userBalance, setUserBalance] = useState(0);
   const [showCountryModal, setShowCountryModal] = useState(false);
   const [selectedCountry, setSelectedCountry] = useState<'US' | 'Other'>('Other');
   const { address, isConnected } = useAccount();
@@ -702,16 +118,36 @@ const PresaleForm = () => {
  };
 
 
+ // Fetch user's balance dynamically
+ const fetchUserBalance = async (walletAddress: string) => {
+   try {
+     // SEPOLIA TESTNET
+     const provider = new ethers.JsonRpcProvider(
+       "https://eth-sepolia.g.alchemy.com/v2/cr9iLv-sh0NpESXW9aFMg",
+       11155111
+     );
+     // MAINNET: const provider = new ethers.JsonRpcProvider("https://eth-mainnet.g.alchemy.com/v2/YOUR_ALCHEMY_KEY", 1);
+     const balanceWei = await provider.getBalance(walletAddress);
+     const balanceEth = parseFloat(ethers.formatEther(balanceWei));
+     setUserBalance(balanceEth);
+     console.log("💰 User balance:", balanceEth, "ETH");
+   } catch (err) {
+     console.error("❌ Error fetching balance:", err);
+   }
+ };
+
  // Check verification status when wallet connects or address changes
  useEffect(() => {
    if (isConnected && address) {
      // Check immediately when wallet connects
      checkVerificationStatus(address);
+     fetchUserBalance(address);
     
      // Poll every 2 minutes to check if verification was completed
      // (in case webhook updates status in backend)
      const pollInterval = setInterval(() => {
        checkVerificationStatus(address);
+       fetchUserBalance(address);
      }, 120000);
 
 
@@ -720,6 +156,7 @@ const PresaleForm = () => {
      // Reset when wallet disconnects
      setIsVerified(false);
      setVerificationStatus('pending');
+     setUserBalance(0);
    }
  }, [isConnected, address]);
 
@@ -800,8 +237,14 @@ const PresaleForm = () => {
     // ---- Step 1: Setup ----
     if (!walletClient) throw new Error("Wallet not connected");
 
-    const provider = new ethers.BrowserProvider(walletClient);
-    const signer = await provider.getSigner();
+    // SEPOLIA TESTNET - Use Sepolia RPC explicitly
+    const provider = new ethers.JsonRpcProvider(
+      "https://eth-sepolia.g.alchemy.com/v2/cr9iLv-sh0NpESXW9aFMg",
+      11155111
+    );
+    // MAINNET: const provider = new ethers.JsonRpcProvider("https://eth-mainnet.g.alchemy.com/v2/YOUR_ALCHEMY_KEY", 1);
+    const browserProvider = new ethers.BrowserProvider(walletClient);
+    const signer = await browserProvider.getSigner();
 
     const selectedCurrencyData = Currencies.find(c => c.symbol === selectedCurrency);
     const isNative = selectedCurrency === "ETH";
@@ -816,17 +259,18 @@ const PresaleForm = () => {
     if (!authAddr) throw new Error("NEXT_PUBLIC_AUTHORIZER_CONTRACT_ADDRESS not set");
 
     console.log("🔗 Authorizer address:", authAddr);
-    console.log("🔗 0xdC99B6D27297d4593673b9A3FAA2dcaE72A45506:");
+    console.log("🔗 User address:", address);
     console.log("🌐 Chain ID:", await provider.getNetwork());
     
-
-    // const authorizer = new ethers.Contract(authAddr, AUTHORIZER_ABI, provider);
-    // const nonce = await authorizer.nonces(address);
-    const authorizer = new ethers.Contract(authAddr, AUTHORIZER_ABI, provider);
-    const nonce = await authorizer.getNonce("0xYourWalletAddress");
-    console.log(nonce.toString());
-
-    console.log("✅ Nonce:", nonce);
+    // Fetch nonce - create interface to properly encode the function call
+    const iface = new ethers.Interface(AUTHORIZER_ABI);
+    const encodedData = iface.encodeFunctionData('nonces', [address]);
+    const result = await provider.call({
+      to: authAddr,
+      data: encodedData
+    });
+    const nonce = iface.decodeFunctionResult('nonces', result)[0];
+    console.log("✅ Fetched nonce:", nonce.toString());
 
     // ---- Step 3: Get token decimals ----
     let decimals = 18;
@@ -834,8 +278,8 @@ const PresaleForm = () => {
       try {
         const decContract = new ethers.Contract(paymentToken, ERC20_ABI, provider);
         decimals = await decContract.decimals();
-      } catch {
-        console.warn("⚠️ Could not fetch token decimals, defaulting to 18");
+      } catch (e) {
+        console.warn("⚠️ Could not fetch token decimals, defaulting to 18:", e);
       }
     }
 
@@ -844,13 +288,16 @@ const PresaleForm = () => {
       process.env.NEXT_PUBLIC_API_URL ||
       "https://dynastical-xzavier-unsanguinarily.ngrok-free.dev";
 
+    // Convert ETH amount to USD (1 ETH = $4,200)
+    const usdAmountValue = amount * 4200;
+    
     const { data } = await axios.post(`${apiUrl}/api/presale/voucher`, {
       buyer: address,
       beneficiary: address,
       paymentToken:paymentToken,
-      usdAmount: amount,
+      usdAmount: usdAmountValue,
       userId: address,
-      usernonce: nonce,
+      usernonce: nonce.toString(),
       decimals: decimals,
     });
 
@@ -890,15 +337,16 @@ const PresaleForm = () => {
       );
     } else {
       // ERC20 purchase
-      const tokenContract = new ethers.Contract(paymentToken, ERC20_ABI, signer);
+      const tokenContractRead = new ethers.Contract(paymentToken, ERC20_ABI, provider);
       const tokenAmount = ethers.parseUnits(amount.toString(), decimals);
 
-      const allowance = await tokenContract.allowance(address, PRESALE_CONTRACT_ADDRESS);
+      const allowance = await tokenContractRead.allowance(address, PRESALE_CONTRACT_ADDRESS);
       console.log("💳 Current allowance:", allowance.toString());
 
       if (allowance < tokenAmount) {
         console.log("🔐 Approving token spending...");
-        const approveTx = await tokenContract.approve(PRESALE_CONTRACT_ADDRESS, tokenAmount);
+        const tokenContractWrite = new ethers.Contract(paymentToken, ERC20_ABI, signer);
+        const approveTx = await tokenContractWrite.approve(PRESALE_CONTRACT_ADDRESS, tokenAmount);
         await approveTx.wait();
         console.log("✅ Approval confirmed");
       }
@@ -954,12 +402,12 @@ const PresaleForm = () => {
      </div>
 
 
-     <CurrentBalance currentBalance={2.3456} currency={{ iconURL: "img/currencies/ETH.png", symbol: "ETH" }} />
+     <CurrentBalance currentBalance={userBalance} currency={{ iconURL: "img/currencies/ETH.png", symbol: "ETH" }} />
      <CurrencyInput
-       currencyBalance={2.3456}
+       currencyBalance={userBalance}
        currencyIconURL="img/currencies/ETH.png"
        currencySymbol={selectedCurrency}
-       usdValue={1850}
+       usdValue={4200}
        value={amount}
        onChange={(value) => setAmount(value)}
      />
